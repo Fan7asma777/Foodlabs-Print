@@ -20,7 +20,7 @@ import (
 
 const (
 	listenAddr = "127.0.0.1:40213"
-	version    = "0.1.0"
+	version    = "0.1.1"
 )
 
 func main() {
@@ -51,6 +51,12 @@ func withCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		// Chrome 104+ (Private Network Access): requests HTTPS → 127.0.0.1
+		// requieren preflight con este header explícito, sino Chrome bloquea
+		// SILENCIOSAMENTE (sin log de error) → el frontend "no encuentra"
+		// el agent aunque esté corriendo perfecto. Bug user 2026-05-23.
+		// Ref: https://developer.chrome.com/blog/private-network-access-update
+		w.Header().Set("Access-Control-Allow-Private-Network", "true")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
