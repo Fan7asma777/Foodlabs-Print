@@ -1,0 +1,90 @@
+name: Build & Release
+
+# Builda el binario Windows del FoodLabs Print Agent.
+# - Push a main: build + smoke test + artifact (descargable desde Actions, 30 días)
+# - Tag print-agent-v*: además crea GitHub Release público con el .exe como asset
+# - Manual desde la UI de Actions
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'print-agent-v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # crear Release con softprops/action-gh-release
+
+jobs:
+  build:
+    name: Build Windows .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: go.sum
+
+      - name: Resolve dependencies
+        run: go mod tidy
+
+      - name: Build
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o FoodLabsPrintAgent.exe ./cmd/agent
+
+      - name: Smoke test
+        run: |
+          $process = Start-Process -FilePath ".\FoodLabsPrintAgent.exe" -PassThru -NoNewWindow
+          Start-Sleep -Seconds 2
+          if (-not $process.HasExited) {
+            Stop-Process -Id $process.Id -Force
+            Write-Host "Agent started without crashing"
+          } else {
+            Write-Error "Agent exited immediately (exit code $($process.ExitCode))"
+            exit 1
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FoodLabsPrintAgent-windows-amd64
+          path: FoodLabsPrintAgent.exe
+          retention-days: 30
+
+      - name: Create release on tag
+        if: startsWith(github.ref, 'refs/tags/print-agent-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FoodLabs Print Agent ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: FoodLabsPrintAgent.exe
+          body: |
+            **FoodLabs Print Agent** — agent local que conecta `foodlabs.app`
+            con tu impresora térmica de cocina o boletas.
+
+            ## Instalación
+
+            1. Descargá `FoodLabsPrintAgent.exe` de abajo.
+            2. Hacé doble click. Windows va a preguntar si confiás —
+               click en **Más información → Ejecutar de todos modos**
+               (somos nosotros, no está firmado todavía en esta versión).
+            3. Te aparece una ventana negra (consola) confirmando que el
+               agent está corriendo en `127.0.0.1:40213`. Dejala abierta.
+            4. Volvé a foodlabs.app → Configuración → Impresoras y tocá
+               **Volver a escanear**. Tu impresora aparece en la lista.
+
+            ## Features v0.1
+
+            - ✅ Lista impresoras Windows instaladas (locales + red)
+            - ✅ Imprime tickets con corte automático del papel
+            - ✅ Beep cocina opcional (alerta auditiva al cocinero)
+            - ✅ API drop-in compatible con Parzibyte
+
+            ## Próximas versiones
+            - v0.2: tray icon en la barra de tareas
+            - v0.3: auto-start con Windows
+            - v0.4: auto-update silencioso
+            - v1.0: code-signed (sin warning de "publisher desconocido")
