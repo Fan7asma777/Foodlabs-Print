@@ -26,10 +26,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache-dependency-path: go.sum
+          # Sin cache-dependency-path: el primer build no tiene go.sum aún;
+          # actions/setup-go falla si lo apuntamos a un archivo inexistente.
+          cache: false
 
       - name: Resolve dependencies
-        run: go mod tidy
+        run: |
+          go mod tidy
+          cat go.sum || echo "go.sum no generado"
 
       - name: Build
         run: |
