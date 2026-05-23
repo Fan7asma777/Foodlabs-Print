@@ -1,0 +1,19 @@
+# Binarios compilados
+/print-agent
+/print-agent.exe
+/dist/
+/build/
+
+# Code signing artifacts (private — nunca commitear)
+*.pfx
+*.p12
+*.key
+*.cer
+codesign-cert/
+
+# Go workspace local
+go.work
+go.work.sum
+
+# Logs locales durante desarrollo
+*.log
