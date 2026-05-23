@@ -84,8 +84,69 @@ Puerto: **`40213`** (mismo que Parzibyte para drop-in). Bind solo a `127.0.0.1` 
 
 ---
 
+## Cómo se construye y se libera
+
+**No hace falta tener Go instalado local.** GitHub Actions builda automático:
+
+| Trigger | Qué pasa |
+|---|---|
+| Push a `main` que toca `lab/print-agent/**` | Build + smoke test + artifact (descargable desde la pestaña Actions, 30 días) |
+| Push de un tag `print-agent-v*` (ej. `print-agent-v0.1.0`) | Build + crea GitHub Release con el `.exe` como asset descargable público |
+| Manual desde la UI de Actions | Build a demanda |
+
+**Workflow:** `.github/workflows/print-agent.yml`
+
+**Para liberar una versión nueva al cliente:**
+```bash
+git tag print-agent-v0.1.0
+git push origin print-agent-v0.1.0
+# GitHub Actions construye + crea Release
+# URL del .exe queda fija:
+# https://github.com/Fan7asma777/Foodlabs/releases/download/print-agent-v0.1.0/FoodLabsPrintAgent.exe
+```
+
+La UI de Foodlabs apunta a esa URL.
+
+---
+
+## Cómo desarrollar local (opcional — si tenés Go instalado)
+
+```bash
+cd lab/print-agent
+go mod tidy           # descarga deps
+go build -o FoodLabsPrintAgent.exe ./cmd/agent
+./FoodLabsPrintAgent.exe
+
+# Output esperado:
+# [FoodLabs Print Agent] v0.1.0 — escuchando en http://127.0.0.1:40213
+```
+
+Test manual con curl:
+```bash
+# Listar impresoras
+curl http://127.0.0.1:40213/impresoras
+
+# Imprimir un ticket de prueba
+curl -X POST http://127.0.0.1:40213/imprimir \
+  -H "Content-Type: application/json" \
+  -d '{"impresora":"TM-T20","texto":"=== FOODLABS TEST ===\nTicket de prueba\n","cut":true,"beep":true}'
+```
+
+---
+
 ## Estado actual
 
-**M1 en construcción.** Estructura del repo creada, código stub pendiente.
+**v0.1.0 (M1 MVP) — listo para tag + release.** Código completo, workflow CI configurado.
 
-Coordinación: `memory/session_state.md` marca este sub-proyecto como WIP de `claude-qa-kike` (o quien lo continúe).
+Tasks pendientes M1 → completar v0.1:
+- [x] HTTP server stub
+- [x] Listar impresoras Windows (winspool)
+- [x] Imprimir texto raw con ESC/POS
+- [x] Corte automático del papel
+- [x] Beep cocina
+- [x] GitHub Actions build & release
+- [ ] Tag `print-agent-v0.1.0` → primera release pública
+- [ ] Test en hardware real (impresora térmica USB)
+- [ ] Actualizar UI Foodlabs para apuntar al release
+
+Coordinación: `memory/session_state.md` marca este sub-proyecto como WIP de `claude-qa-kike`.
