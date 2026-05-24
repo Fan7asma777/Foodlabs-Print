@@ -44,7 +44,7 @@ jobs:
         run: |
           # NSIS y Windows necesitan .ico (no PNG). ImageMagick genera un
           # .ico multi-resolución con todas las sizes Windows: 16,32,48,256.
-          magick assets/foodlabs-logo.png `
+          magick cmd/agent/assets/foodlabs-logo.png `
             -background none `
             -define icon:auto-resize=16,32,48,256 `
             installer/foodlabs-logo.ico
