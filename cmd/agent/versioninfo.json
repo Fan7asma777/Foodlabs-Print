@@ -1,0 +1,40 @@
+{
+	"FixedFileInfo": {
+		"FileVersion": {
+			"Major": 0,
+			"Minor": 3,
+			"Patch": 2,
+			"Build": 0
+		},
+		"ProductVersion": {
+			"Major": 0,
+			"Minor": 3,
+			"Patch": 2,
+			"Build": 0
+		},
+		"FileFlagsMask": "3f",
+		"FileFlags ": "00",
+		"FileOS": "040004",
+		"FileType": "01",
+		"FileSubType": "00"
+	},
+	"StringFileInfo": {
+		"Comments": "Local print bridge between foodlabs.app and thermal printers",
+		"CompanyName": "FoodLabs SpA",
+		"FileDescription": "FoodLabs Print Agent",
+		"FileVersion": "0.3.2.0",
+		"InternalName": "FoodLabsPrintAgent",
+		"LegalCopyright": "© FoodLabs SpA — github.com/Fan7asma777/Foodlabs-Print",
+		"OriginalFilename": "FoodLabsPrintAgent.exe",
+		"ProductName": "FoodLabs Print Agent",
+		"ProductVersion": "0.3.2"
+	},
+	"VarFileInfo": {
+		"Translation": {
+			"LangID": "0409",
+			"CharsetID": "04B0"
+		}
+	},
+	"IconPath": "foodlabs-logo.ico",
+	"ManifestPath": ""
+}

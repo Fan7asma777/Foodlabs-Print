@@ -35,6 +35,37 @@ jobs:
           go mod tidy
           cat go.sum || echo "go.sum no generado"
 
+      - name: Install NSIS + ImageMagick (pre-build, necesitamos ICO ANTES de go build)
+        run: |
+          choco install nsis -y --no-progress
+          choco install imagemagick -y --no-progress
+
+      - name: Generate ICO from logo PNG
+        run: |
+          # NSIS y Windows necesitan .ico (no PNG). ImageMagick genera un
+          # .ico multi-resolución con todas las sizes Windows: 16,32,48,256.
+          magick assets/foodlabs-logo.png `
+            -background none `
+            -define icon:auto-resize=16,32,48,256 `
+            installer/foodlabs-logo.ico
+          # Copia para que goversioninfo lo encuentre desde cmd/agent/
+          Copy-Item installer/foodlabs-logo.ico cmd/agent/foodlabs-logo.ico
+          Write-Host "ICO creado: $((Get-Item installer/foodlabs-logo.ico).Length) bytes"
+
+      - name: Generate .syso (icon embed para el .exe)
+        run: |
+          # goversioninfo lee versioninfo.json y genera resource.syso que Go
+          # auto-incluye en el build → el .exe queda con el icono Foodlabs
+          # visible en el explorador, alt-tab, taskbar, propiedades, etc.
+          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+          cd cmd/agent
+          goversioninfo -platform-specific=true
+          if (-not (Test-Path "resource_windows_amd64.syso")) {
+            Write-Error "goversioninfo no genero el .syso"
+            exit 1
+          }
+          Write-Host "syso creado"
+
       - name: Build binary
         run: |
           go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o FoodLabsPrintAgent.exe ./cmd/agent
@@ -54,12 +85,10 @@ jobs:
             exit 1
           }
 
-      - name: Install NSIS
-        run: choco install nsis -y --no-progress
-
       - name: Build NSIS installer
         run: |
-          # Copiamos el binary al dir del .nsi para que el File include lo encuentre
+          # NSIS + ImageMagick + ICO ya estaban instalados/generados antes
+          # del go build (necesario para el .syso del icono embebido).
           Copy-Item FoodLabsPrintAgent.exe installer\FoodLabsPrintAgent.exe
           cd installer
           & "C:\Program Files (x86)\NSIS\makensis.exe" foodlabs-print.nsi

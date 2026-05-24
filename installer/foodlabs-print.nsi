@@ -14,7 +14,7 @@ SetCompressor /SOLID lzma
 
 !define APPNAME      "FoodLabs Print Agent"
 !define COMPANY      "FoodLabs SpA"
-!define VERSION      "0.3.1"
+!define VERSION      "0.3.2"
 !define INSTALL_DIR  "$PROGRAMFILES64\FoodLabsPrintAgent"
 !define UNINST_KEY   "Software\Microsoft\Windows\CurrentVersion\Uninstall\FoodLabsPrintAgent"
 !define STARTUP_KEY  "Software\Microsoft\Windows\CurrentVersion\Run"
@@ -28,8 +28,11 @@ RequestExecutionLevel admin
 !include "MUI2.nsh"
 
 !define MUI_ABORTWARNING
-!define MUI_ICON   "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+; Icono del installer y uninstaller: matraz Foodlabs (foodlabs-logo.ico)
+; generado en CI por ImageMagick desde assets/foodlabs-logo.png (multi-res:
+; 16, 32, 48, 256). Reemplaza los íconos default del NSIS Modern UI.
+!define MUI_ICON   "foodlabs-logo.ico"
+!define MUI_UNICON "foodlabs-logo.ico"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_INSTFILES

@@ -12,11 +12,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"image"
-	"image/color"
-	"image/png"
+	_ "embed"
 	"log"
 	"net/http"
 	"os/exec"
@@ -25,6 +22,13 @@ import (
 
 	"github.com/getlantern/systray"
 )
+
+// Logo Foodlabs (matraz colorido) — copia exacta del logo oficial en
+// Front/public/logo-foodlabs.png. Windows scale-downea para el tray a
+// 16x16 con anti-aliasing decente.
+//
+//go:embed assets/foodlabs-logo.png
+var foodlabsLogoPNG []byte
 
 func runTray(srv *http.Server) {
 	onReady := func() {
@@ -104,37 +108,10 @@ func testHealth() {
 	log.Printf("test /health OK (%s)", res.Status)
 }
 
-// iconBytes cachea el PNG generado al primer acceso. Generar runtime
-// garantiza bytes válidos (vs hardcoded que en v0.3.0 quedaron malformados
-// y systray.SetIcon falló con "Unable to set icon: The operation completed
-// successfully" — error confuso de Windows API ante PNG inválido).
-var iconBytes []byte
-
-// trayIconBytes devuelve un PNG 16x16 verde Foodlabs (#059669) generado
-// con image/png stdlib. Sin dependencias externas, bytes válidos garantizados.
-// M3.2 reemplazará con el logo Foodlabs real (//go:embed icon.ico).
+// trayIconBytes devuelve el PNG del logo Foodlabs embebido en el binary
+// vía //go:embed. Windows API LoadIcon scale-downea para el tray (16x16)
+// con anti-aliasing aceptable. Bytes son del archivo real (no inventados),
+// garantizado válido.
 func trayIconBytes() []byte {
-	if iconBytes != nil {
-		return iconBytes
-	}
-	const size = 16
-	img := image.NewRGBA(image.Rect(0, 0, size, size))
-	// Verde Foodlabs (Tailwind emerald-600): #059669
-	fg := color.RGBA{R: 0x05, G: 0x96, B: 0x69, A: 0xFF}
-	for y := 0; y < size; y++ {
-		for x := 0; x < size; x++ {
-			// Bordes redondeados sutiles: las esquinas (2x2) quedan transparentes
-			if (x < 2 || x >= size-2) && (y < 2 || y >= size-2) {
-				continue
-			}
-			img.Set(x, y, fg)
-		}
-	}
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
-		log.Printf("trayIconBytes: png encode falló: %v", err)
-		return nil
-	}
-	iconBytes = buf.Bytes()
-	return iconBytes
+	return foodlabsLogoPNG
 }

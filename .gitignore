@@ -4,6 +4,13 @@
 /dist/
 /build/
 
+# Assets generados en CI (ICO desde PNG, syso desde versioninfo.json)
+cmd/agent/foodlabs-logo.ico
+cmd/agent/resource_*.syso
+installer/foodlabs-logo.ico
+installer/FoodLabsPrintAgent.exe
+installer/FoodLabsPrintAgent-Setup.exe
+
 # Code signing artifacts (private — nunca commitear)
 *.pfx
 *.p12
