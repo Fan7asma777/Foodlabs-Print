@@ -27,7 +27,7 @@ import (
 
 const (
 	listenAddr = "127.0.0.1:40213"
-	version    = "0.3.2"
+	version    = "0.3.3"
 )
 
 func main() {

@@ -12,8 +12,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
+	"encoding/binary"
 	"log"
 	"net/http"
 	"os/exec"
@@ -108,10 +110,38 @@ func testHealth() {
 	log.Printf("test /health OK (%s)", res.Status)
 }
 
-// trayIconBytes devuelve el PNG del logo Foodlabs embebido en el binary
-// vía //go:embed. Windows API LoadIcon scale-downea para el tray (16x16)
-// con anti-aliasing aceptable. Bytes son del archivo real (no inventados),
-// garantizado válido.
+// trayIconBytes devuelve el logo Foodlabs listo para systray.SetIcon.
+//
+// getlantern/systray en Windows requiere bytes ICO (NO PNG). Si le pasamos
+// PNG directo, falla silencioso ("Unable to set icon: The operation
+// completed successfully") y la barra de tareas queda sin icono.
+//
+// Solución: envolver el PNG embebido en un contenedor ICO de 1 imagen.
+// Windows Vista+ acepta PNG embebido dentro de ICO vía
+// CreateIconFromResourceEx. Mac/Linux también lo aceptan (compatible).
 func trayIconBytes() []byte {
-	return foodlabsLogoPNG
+	return wrapPNGAsICO(foodlabsLogoPNG)
+}
+
+// wrapPNGAsICO arma un ICO de 1 imagen con el PNG dentro. Header ICONDIR
+// (6 bytes) + ICONDIRENTRY (16 bytes) = 22 bytes de overhead, después el
+// PNG entero. Reportamos 256x256 en el header (campo 0 = 256 según spec
+// ICO) y dejamos que Windows scale-downee al tamaño del tray (16x16).
+func wrapPNGAsICO(pngData []byte) []byte {
+	var buf bytes.Buffer
+	// ICONDIR (6 bytes)
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(0)) // reserved
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1)) // type 1 = ICON
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1)) // image count
+	// ICONDIRENTRY (16 bytes)
+	buf.WriteByte(0)                                         // width  (0 = 256)
+	buf.WriteByte(0)                                         // height (0 = 256)
+	buf.WriteByte(0)                                         // colors in palette
+	buf.WriteByte(0)                                         // reserved
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(1))   // color planes
+	_ = binary.Write(&buf, binary.LittleEndian, uint16(32))  // bits per pixel
+	_ = binary.Write(&buf, binary.LittleEndian, uint32(len(pngData))) // image size
+	_ = binary.Write(&buf, binary.LittleEndian, uint32(22))  // offset to PNG
+	buf.Write(pngData)
+	return buf.Bytes()
 }
