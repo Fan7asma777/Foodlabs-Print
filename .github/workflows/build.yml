@@ -35,12 +35,15 @@ jobs:
           go mod tidy
           cat go.sum || echo "go.sum no generado"
 
-      - name: Build
+      - name: Build binary
         run: |
           go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o FoodLabsPrintAgent.exe ./cmd/agent
 
-      - name: Smoke test
+      - name: Smoke test binary
         run: |
+          # Tray icon abre una bg thread y systray.Run bloquea. Lo dejamos
+          # arrancar 2s y luego killamos: si arrancó sin crash, asumimos ok.
+          # Validación más profunda requiere VM con desktop interactivo.
           $process = Start-Process -FilePath ".\FoodLabsPrintAgent.exe" -PassThru -NoNewWindow
           Start-Sleep -Seconds 2
           if (-not $process.HasExited) {
@@ -51,11 +54,28 @@ jobs:
             exit 1
           }
 
-      - name: Upload artifact
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Build NSIS installer
+        run: |
+          # Copiamos el binary al dir del .nsi para que el File include lo encuentre
+          Copy-Item FoodLabsPrintAgent.exe installer\FoodLabsPrintAgent.exe
+          cd installer
+          & "C:\Program Files (x86)\NSIS\makensis.exe" foodlabs-print.nsi
+          if (-not (Test-Path "FoodLabsPrintAgent-Setup.exe")) {
+            Write-Error "NSIS no genero el Setup.exe"
+            exit 1
+          }
+          Write-Host "Installer creado: $((Get-Item FoodLabsPrintAgent-Setup.exe).Length) bytes"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: FoodLabsPrintAgent-windows-amd64
-          path: FoodLabsPrintAgent.exe
+          path: |
+            FoodLabsPrintAgent.exe
+            installer/FoodLabsPrintAgent-Setup.exe
           retention-days: 30
 
       - name: Create release on tag
@@ -64,7 +84,9 @@ jobs:
         with:
           name: FoodLabs Print Agent ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          files: FoodLabsPrintAgent.exe
+          files: |
+            FoodLabsPrintAgent.exe
+            installer/FoodLabsPrintAgent-Setup.exe
           body: |
             **FoodLabs Print Agent** — agent local que conecta `foodlabs.app`
             con tu impresora térmica de cocina o boletas.
