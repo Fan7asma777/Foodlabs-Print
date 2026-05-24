@@ -27,7 +27,7 @@ import (
 
 const (
 	listenAddr = "127.0.0.1:40213"
-	version    = "0.2.0"
+	version    = "0.3.0"
 )
 
 func main() {
@@ -53,13 +53,15 @@ func main() {
 	log.Printf("[FoodLabs Print Agent] v%s — escuchando en http://%s (OS: %s)", version, listenAddr, runtime.GOOS)
 
 	// HTTP server en goroutine; el proceso principal vive en el tray icon.
-	// Cuando NO hay tray disponible (ej. corrida con `go run` en dev), caemos
-	// al modo legacy "bloqueante" para mantener compat de desarrollo.
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server: %v", err)
 		}
 	}()
+
+	// Auto-update (M4): chequea GitHub Releases cada 6h, descarga + reinicia
+	// solo si hay versión nueva. Best-effort: si falla NO rompe operación.
+	startAutoUpdater()
 
 	runTray(srv) // bloqueante hasta que el usuario haga "Salir"
 }
