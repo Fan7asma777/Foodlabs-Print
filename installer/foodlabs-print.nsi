@@ -14,7 +14,7 @@ SetCompressor /SOLID lzma
 
 !define APPNAME      "FoodLabs Print Agent"
 !define COMPANY      "FoodLabs SpA"
-!define VERSION      "0.3.0"
+!define VERSION      "0.3.1"
 !define INSTALL_DIR  "$PROGRAMFILES64\FoodLabsPrintAgent"
 !define UNINST_KEY   "Software\Microsoft\Windows\CurrentVersion\Uninstall\FoodLabsPrintAgent"
 !define STARTUP_KEY  "Software\Microsoft\Windows\CurrentVersion\Run"
