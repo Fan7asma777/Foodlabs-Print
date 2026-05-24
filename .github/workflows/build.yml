@@ -68,7 +68,12 @@ jobs:
 
       - name: Build binary
         run: |
-          go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" -o FoodLabsPrintAgent.exe ./cmd/agent
+          # -H=windowsgui: compila como GUI subsystem -> NO abre ventana CMD
+          # al arrancar. El proceso vive como background app con solo el tray
+          # icon visible. Sin esto, cerrar la ventana CMD mata el proceso.
+          # Logs siguen yendo al file (%APPDATA%\FoodLabsPrintAgent\logs\)
+          # via io.MultiWriter; stdout queda sin handle pero no rompe.
+          go build -ldflags="-s -w -H=windowsgui -X main.version=${{ github.ref_name }}" -o FoodLabsPrintAgent.exe ./cmd/agent
 
       - name: Smoke test binary
         run: |
